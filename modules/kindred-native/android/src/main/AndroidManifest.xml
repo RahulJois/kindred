@@ -1,0 +1,37 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <!--
+    Kindred is sideloaded, so it uses USE_EXACT_ALARM (auto-granted on Android 13+) to make the
+    check-in arrive on time. Google Play only allows this permission for alarm/calendar apps;
+    if the app is ever published there, drop it and rely on SCHEDULE_EXACT_ALARM + the Settings prompt.
+  -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+  <application>
+    <receiver
+      android:name="expo.modules.kindrednative.MoodReceiver"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+        <action android:name="android.intent.action.TIME_SET" />
+        <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+        <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+      </intent-filter>
+    </receiver>
+
+    <receiver
+      android:name="expo.modules.kindrednative.MoodWidgetProvider"
+      android:exported="true"
+      android:label="@string/kindred_widget_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/kindred_mood_widget_info" />
+    </receiver>
+  </application>
+</manifest>

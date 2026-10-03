@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collapsed / heads-up content: just the five emojis so they fit in ~48dp. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:gravity="center_vertical"
+  android:orientation="horizontal">
+
+    <LinearLayout
+      android:id="@+id/kindred_mood_5"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:background="?android:attr/selectableItemBackground"
+      android:contentDescription="Great">
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="😄"
+        android:textSize="24sp" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/kindred_mood_4"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:background="?android:attr/selectableItemBackground"
+      android:contentDescription="Good">
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🙂"
+        android:textSize="24sp" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/kindred_mood_3"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:background="?android:attr/selectableItemBackground"
+      android:contentDescription="Okay">
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="😐"
+        android:textSize="24sp" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/kindred_mood_2"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:background="?android:attr/selectableItemBackground"
+      android:contentDescription="Bad">
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🙁"
+        android:textSize="24sp" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/kindred_mood_1"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingTop="4dp"
+      android:paddingBottom="4dp"
+      android:background="?android:attr/selectableItemBackground"
+      android:contentDescription="Awful">
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="😢"
+        android:textSize="24sp" />
+    </LinearLayout>
+</LinearLayout>

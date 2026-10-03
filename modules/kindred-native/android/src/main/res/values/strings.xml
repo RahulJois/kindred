@@ -1,0 +1,6 @@
+<resources>
+  <string name="kindred_widget_label">Kindred mood</string>
+  <string name="kindred_widget_description">Log today\'s mood with one tap</string>
+  <string name="kindred_channel_name">Daily check-in</string>
+  <string name="kindred_channel_description">A once-a-day reminder to log your mood</string>
+</resources>

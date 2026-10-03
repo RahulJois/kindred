@@ -39,3 +39,13 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+/android
+
+# Release signing key + passwords: never commit, back up somewhere safe
+/credentials/
+credentials.json
+/build
+
+# Gradle output from the local native module
+modules/*/android/build/
+modules/*/android/.gradle/
