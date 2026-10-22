@@ -23,7 +23,7 @@ class MoodWidgetProvider : AppWidgetProvider() {
       val views = RemoteViews(context.packageName, R.layout.kindred_widget)
       views.setTextViewText(
         R.id.kindred_widget_title,
-        if (today == null) "How's today?" else "Today · ${Moods.emoji(today)} ${Moods.label(today)}"
+        if (today == null) "How's today?" else "Today · ${Moods.label(today)}"
       )
       MoodNotification.openAppIntent(context)?.let {
         views.setOnClickPendingIntent(R.id.kindred_widget_title, it)

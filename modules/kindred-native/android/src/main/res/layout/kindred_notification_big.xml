@@ -25,11 +25,11 @@
       android:paddingBottom="4dp"
       android:background="?android:attr/selectableItemBackground"
       android:contentDescription="Great">
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="😄"
-        android:textSize="28sp" />
+      <ImageView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/kindred_face_5" />
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -48,11 +48,11 @@
       android:paddingBottom="4dp"
       android:background="?android:attr/selectableItemBackground"
       android:contentDescription="Good">
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🙂"
-        android:textSize="28sp" />
+      <ImageView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/kindred_face_4" />
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -71,11 +71,11 @@
       android:paddingBottom="4dp"
       android:background="?android:attr/selectableItemBackground"
       android:contentDescription="Okay">
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="😐"
-        android:textSize="28sp" />
+      <ImageView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/kindred_face_3" />
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -94,11 +94,11 @@
       android:paddingBottom="4dp"
       android:background="?android:attr/selectableItemBackground"
       android:contentDescription="Bad">
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🙁"
-        android:textSize="28sp" />
+      <ImageView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/kindred_face_2" />
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -117,11 +117,11 @@
       android:paddingBottom="4dp"
       android:background="?android:attr/selectableItemBackground"
       android:contentDescription="Awful">
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="😢"
-        android:textSize="28sp" />
+      <ImageView
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/kindred_face_1" />
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -10,6 +10,8 @@ import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 
 object MoodNotification {
   private const val CHANNEL_ID = "kindred_daily_checkin"
@@ -29,7 +31,7 @@ object MoodNotification {
     manager.createNotificationChannel(channel)
   }
 
-  /** Posts the check-in with five tappable emojis that log [date] without opening the app. */
+  /** Posts the check-in with five tappable mood faces that log [date] without opening the app. */
   fun show(context: Context, date: String) {
     ensureChannel(context)
     val small = RemoteViews(context.packageName, R.layout.kindred_notification_small)
@@ -43,7 +45,7 @@ object MoodNotification {
     val notification = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(R.drawable.kindred_ic_stat)
       .setContentTitle("How was today?")
-      .setContentText("Tap an emoji to log your mood")
+      .setContentText("Tap a face to log your mood")
       .setStyle(NotificationCompat.DecoratedCustomViewStyle())
       .setCustomContentView(small)
       .setCustomHeadsUpContentView(small)
@@ -67,7 +69,8 @@ object MoodNotification {
     ensureChannel(context)
     val notification = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(R.drawable.kindred_ic_stat)
-      .setContentTitle("Logged ${Moods.emoji(mood)} ${Moods.label(mood)}")
+      .setContentTitle("Logged · ${Moods.label(mood)}")
+      .setLargeIcon(ContextCompat.getDrawable(context, Moods.face(mood))?.toBitmap(128, 128))
       .setContentText("Tap to add tags or a note")
       .setContentIntent(openAppIntent(context))
       .addAction(0, "Undo", undo)

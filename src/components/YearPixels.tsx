@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { dayKey, daysInMonth, MONTHS, todayKey, type DayKey } from '../dates';
 import type { Entry } from '../db';
-import { moodInfo } from '../moods';
+import { useMoodColor } from '../moods';
 import { useTheme } from '../theme';
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
 /** "Year in pixels": one row per month, one square per day. */
 export function YearPixels({ year, byDate, onPressDay, onPressMonth }: Props) {
   const t = useTheme();
+  const moodColor = useMoodColor();
   const today = todayKey();
   return (
     <View>
@@ -38,7 +39,7 @@ export function YearPixels({ year, byDate, onPressDay, onPressMonth }: Props) {
                   hitSlop={2}
                   style={[
                     styles.pixel,
-                    { backgroundColor: entry ? moodInfo(entry.mood).color : t.empty, opacity: future ? 0.4 : 1 },
+                    { backgroundColor: entry ? moodColor(entry.mood) : t.empty, opacity: future ? 0.4 : 1 },
                     date === today && { borderWidth: 1.5, borderColor: t.text },
                   ]}
                 />

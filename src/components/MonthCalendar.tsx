@@ -2,13 +2,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { dayKey, daysInMonth, todayKey, WEEKDAYS_SHORT, type DayKey } from '../dates';
 import type { Entry } from '../db';
-import { moodInfo } from '../moods';
+import { useMoodColor } from '../moods';
+import { MoodFace } from './MoodFace';
 import { useTheme } from '../theme';
 
 type Props = { year: number; month: number; byDate: Map<DayKey, Entry>; onPressDay: (date: DayKey) => void };
 
 export function MonthCalendar({ year, month, byDate, onPressDay }: Props) {
   const t = useTheme();
+  const moodColor = useMoodColor();
   const today = todayKey();
   const offset = new Date(year, month, 1).getDay();
   const cells: (DayKey | null)[] = [
@@ -35,7 +37,6 @@ export function MonthCalendar({ year, month, byDate, onPressDay }: Props) {
             if (!date) return <View key={`blank-${wi}-${di}`} style={styles.cell} />;
             const entry = byDate.get(date);
             const future = date > today;
-            const mood = entry && moodInfo(entry.mood);
             return (
               <Pressable
                 key={date}
@@ -44,11 +45,11 @@ export function MonthCalendar({ year, month, byDate, onPressDay }: Props) {
                 style={({ pressed }) => [
                   styles.cell,
                   styles.day,
-                  { backgroundColor: mood ? mood.color : t.empty, opacity: future ? 0.35 : pressed ? 0.6 : 1 },
-                  date === today && { borderWidth: 2, borderColor: t.text },
+                  { backgroundColor: entry ? moodColor(entry.mood) : t.empty, opacity: future ? 0.35 : pressed ? 0.6 : 1 },
+                  date === today && { borderColor: t.text },
                 ]}>
-                {mood ? (
-                  <Text style={styles.emoji}>{mood.emoji}</Text>
+                {entry ? (
+                  <MoodFace mood={entry.mood} size={26} bare />
                 ) : (
                   <Text style={[styles.num, { color: t.muted }]}>{Number(date.slice(8))}</Text>
                 )}
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
   week: { flexDirection: 'row' },
   weekday: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', marginBottom: 6 },
   cell: { flex: 1, aspectRatio: 1, margin: 2 },
-  day: { borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 18 },
+  // Every cell carries the border so today's outline doesn't change its size.
+  day: { borderRadius: 10, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   num: { fontSize: 13, fontWeight: '500' },
 });

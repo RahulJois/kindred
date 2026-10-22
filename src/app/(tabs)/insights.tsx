@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Card, SectionTitle, Segmented, StatusBarBackdrop } from '../../components/ui';
+import { MoodFace } from '../../components/MoodFace';
+import { MoodTimeline } from '../../components/MoodTimeline';
+import { Card, Chip, SectionTitle, Segmented, StatusBarBackdrop } from '../../components/ui';
 import { useQuery } from '../../data';
 import { addDays, todayKey, WEEKDAYS } from '../../dates';
 import { getEntries, getTags } from '../../db';
 import { computeInsights, computeStreaks, MIN_TAG_DAYS } from '../../insights';
-import { MOODS, moodInfo } from '../../moods';
+import { MOODS, useMoodColor } from '../../moods';
 import { useTheme } from '../../theme';
 
 type Range = '30' | '90' | 'year' | 'all';
@@ -24,6 +26,9 @@ export default function InsightsScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const [range, setRange] = useState<Range>('30');
+  const [chartMode, setChartMode] = useState<'line' | 'bars'>('line');
+  const [highlightTag, setHighlightTag] = useState<number | null>(null);
+  const moodColor = useMoodColor();
 
   const data = useQuery(async (db) => ({ all: await getEntries(db), tags: await getTags(db) }));
   const from = rangeStart(range);
@@ -33,6 +38,10 @@ export default function InsightsScreen() {
 
   const maxCount = Math.max(1, ...Object.values(stats.distribution));
   const tagStats = stats.tags.filter((s) => s.count >= MIN_TAG_DAYS);
+  // "All" starts at the first entry; the chart's range always ends today.
+  const chartFrom = range === 'all' ? (entries[entries.length - 1]?.date ?? todayKey()) : from;
+  const usedTags = stats.tags.map((s) => s.tag);
+  const highlight = stats.tags.find((s) => s.tag.id === highlightTag);
 
   return (
     <>
@@ -50,7 +59,19 @@ export default function InsightsScreen() {
         />
 
         <View style={styles.stats}>
-          <Stat label="Average" value={stats.average == null ? '—' : `${moodInfo(stats.average).emoji} ${stats.average.toFixed(1)}`} />
+          <Stat
+            label="Average"
+            value={
+              stats.average == null ? (
+                '—'
+              ) : (
+                <View style={styles.inline}>
+                  <MoodFace mood={stats.average} size={22} />
+                  <Text style={[styles.statValue, { color: t.text, marginLeft: 6 }]}>{stats.average.toFixed(1)}</Text>
+                </View>
+              )
+            }
+          />
           <Stat label="Days logged" value={String(stats.count)} />
           <Stat label="Streak" value={`${streaks.current}d`} hint={`best ${streaks.longest}d`} />
         </View>
@@ -61,13 +82,59 @@ export default function InsightsScreen() {
           </Card>
         ) : (
           <>
-            <SectionTitle>Mood count</SectionTitle>
+            <View style={styles.chartHeader}>
+            <SectionTitle>Mood over time</SectionTitle>
+            <View style={{ width: 130, marginTop: 12 }}>
+              <Segmented
+                value={chartMode}
+                onChange={setChartMode}
+                options={[
+                  { value: 'line', label: 'Line' },
+                  { value: 'bars', label: 'Bars' },
+                ]}
+              />
+            </View>
+          </View>
+          <Card style={{ paddingHorizontal: 10 }}>
+            <MoodTimeline
+              entries={entries}
+              from={chartFrom}
+              to={todayKey()}
+              mode={chartMode}
+              tags={data?.tags ?? []}
+              highlightTagId={highlightTag}
+            />
+            {usedTags.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+                <Chip label="All days" selected={highlightTag == null} onPress={() => setHighlightTag(null)} />
+                {usedTags.map((tag) => (
+                  <Chip
+                    key={tag.id}
+                    label={`${tag.emoji} ${tag.name}`}
+                    selected={highlightTag === tag.id}
+                    onPress={() => setHighlightTag(highlightTag === tag.id ? null : tag.id)}
+                  />
+                ))}
+              </ScrollView>
+            )}
+            {highlight && (
+              <Text style={[styles.footnote, { color: t.muted }]}>
+                {highlight.tag.emoji} {highlight.tag.name} on {highlight.count} {highlight.count === 1 ? 'day' : 'days'}, average{' '}
+                {highlight.average.toFixed(1)} ({highlight.delta >= 0 ? '+' : ''}
+                {highlight.delta.toFixed(1)} vs. other days)
+              </Text>
+            )}
+          </Card>
+
+          <SectionTitle>Mood count</SectionTitle>
             <Card>
               {MOODS.map((m) => (
                 <View key={m.value} style={styles.barRow}>
-                  <Text style={styles.barEmoji}>{m.emoji}</Text>
+                  <View style={styles.barFace}>
+                    <MoodFace mood={m.value} size={24} />
+                  </View>
                   <View style={[styles.barTrack, { backgroundColor: t.empty }]}>
-                    <View style={[styles.bar, { width: `${(stats.distribution[m.value] / maxCount) * 100}%`, backgroundColor: m.color }]} />
+                    <View style={[styles.bar, { width: `${(stats.distribution[m.value] / maxCount) * 100}%`, backgroundColor: moodColor(m.value) }]} />
                   </View>
                   <Text style={[styles.barValue, { color: t.muted }]}>{stats.distribution[m.value]}</Text>
                 </View>
@@ -86,9 +153,10 @@ export default function InsightsScreen() {
                     <Text style={{ color: t.text, flex: 1, fontSize: 15 }}>
                       {s.tag.emoji} {s.tag.name} <Text style={{ color: t.muted, fontSize: 13 }}>· {s.count}d</Text>
                     </Text>
-                    <Text style={{ color: t.muted, marginRight: 12 }}>
-                      {moodInfo(s.average).emoji} {s.average.toFixed(1)}
-                    </Text>
+                    <View style={[styles.inline, { marginRight: 12 }]}>
+                      <MoodFace mood={s.average} size={18} />
+                      <Text style={{ color: t.muted, marginLeft: 4 }}>{s.average.toFixed(1)}</Text>
+                    </View>
                     <Text style={[styles.delta, { color: s.delta >= 0 ? '#2E8B60' : t.danger }]}>
                       {s.delta >= 0 ? '+' : ''}
                       {s.delta.toFixed(1)}
@@ -109,7 +177,7 @@ export default function InsightsScreen() {
                     <View style={[styles.weekTrack, { backgroundColor: t.empty }]}>
                       {w.average != null && (
                         <View
-                          style={[styles.weekBar, { height: `${(w.average / 5) * 100}%`, backgroundColor: moodInfo(w.average).color }]}
+                          style={[styles.weekBar, { height: `${(w.average / 5) * 100}%`, backgroundColor: moodColor(w.average) }]}
                         />
                       )}
                     </View>
@@ -127,11 +195,11 @@ export default function InsightsScreen() {
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   const t = useTheme();
   return (
     <Card style={styles.stat}>
-      <Text style={[styles.statValue, { color: t.text }]}>{value}</Text>
+      {typeof value === 'string' ? <Text style={[styles.statValue, { color: t.text }]}>{value}</Text> : value}
       <Text style={{ color: t.muted, fontSize: 12 }}>{label}</Text>
       {hint ? <Text style={{ color: t.muted, fontSize: 11 }}>{hint}</Text> : null}
     </Card>
@@ -145,7 +213,9 @@ const styles = StyleSheet.create({
   stat: { flex: 1, padding: 12 },
   statValue: { fontSize: 20, fontWeight: '700' },
   barRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
-  barEmoji: { fontSize: 20, width: 32 },
+  barFace: { width: 32 },
+  inline: { flexDirection: 'row', alignItems: 'center' },
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   barTrack: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
   bar: { height: 12, borderRadius: 6 },
   barValue: { width: 32, textAlign: 'right' },

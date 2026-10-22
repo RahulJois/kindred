@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MonthCalendar } from '../../components/MonthCalendar';
 import { MoodLegend } from '../../components/MoodLegend';
+import { MoodFace } from '../../components/MoodFace';
 import { MoodPicker } from '../../components/MoodPicker';
 import { UndoBar } from '../../components/UndoBar';
 import { YearPixels } from '../../components/YearPixels';
@@ -14,7 +15,7 @@ import { Card, Segmented, StatusBarBackdrop } from '../../components/ui';
 import { notifyDayMood, useQuery, useRefresh } from '../../data';
 import { formatLong, formatShort, fromKey, MONTHS, todayKey, type DayKey } from '../../dates';
 import { getEntries, getTags, quickLog as applyQuickLog, undoQuickLog, type Entry, type Tag } from '../../db';
-import { moodInfo } from '../../moods';
+import { moodInfo, useMoodColor } from '../../moods';
 import { useTheme } from '../../theme';
 
 export default function JournalScreen() {
@@ -132,7 +133,8 @@ export default function JournalScreen() {
       <StatusBarBackdrop />
       {lastLog && (
         <UndoBar
-          message={`Logged ${moodInfo(lastLog.mood).emoji} ${moodInfo(lastLog.mood).label}`}
+          message={`Logged ${moodInfo(lastLog.mood).label}`}
+          icon={<MoodFace mood={lastLog.mood} size={22} />}
           onUndo={undo}
           onDismiss={dismissUndo}
         />
@@ -153,6 +155,7 @@ function TodayCard({
   onOpen: () => void;
 }) {
   const t = useTheme();
+  const moodColor = useMoodColor();
   if (!entry) {
     return (
       <Card style={styles.today}>
@@ -162,12 +165,13 @@ function TodayCard({
     );
   }
   const m = moodInfo(entry.mood);
+  const color = moodColor(entry.mood);
   const tagLabels = entry.tagIds.map((id) => tagById.get(id)).filter(Boolean).map((tag) => `${tag!.emoji} ${tag!.name}`);
   return (
     <Pressable onPress={onOpen}>
-      <Card style={[styles.today, { borderColor: m.color, borderWidth: 1.5 }]}>
+      <Card style={[styles.today, { borderColor: color, borderWidth: 1.5 }]}>
         <View style={styles.todayRow}>
-          <Text style={styles.todayEmoji}>{m.emoji}</Text>
+          <MoodFace mood={entry.mood} size={46} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.todayTitle, { color: t.text, marginBottom: 2 }]}>Today · {m.label}</Text>
             <Text style={{ color: t.muted }} numberOfLines={2}>
@@ -187,9 +191,7 @@ function EntryRow({ entry, tagById, onPress }: { entry: Entry; tagById: Map<numb
   const tags = entry.tagIds.map((id) => tagById.get(id)?.emoji).filter(Boolean).join(' ');
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.entry, { borderColor: t.border, opacity: pressed ? 0.6 : 1 }]}>
-      <View style={[styles.entryDot, { backgroundColor: m.color }]}>
-        <Text style={{ fontSize: 20 }}>{m.emoji}</Text>
-      </View>
+      <MoodFace mood={entry.mood} size={40} />
       <View style={{ flex: 1 }}>
         <Text style={{ color: t.text, fontWeight: '600' }}>
           {formatShort(entry.date)} <Text style={{ color: t.muted, fontWeight: '400' }}>· {m.label}</Text>
@@ -212,10 +214,8 @@ const styles = StyleSheet.create({
   today: { marginBottom: 20 },
   todayTitle: { fontSize: 17, fontWeight: '700', marginBottom: 12 },
   todayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  todayEmoji: { fontSize: 40 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   period: { fontSize: 17, fontWeight: '700', minWidth: 120, textAlign: 'center' },
   listTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 24, marginBottom: 4 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  entryDot: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 });
