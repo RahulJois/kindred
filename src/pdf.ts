@@ -200,7 +200,8 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
   .entry { padding: 8px 0; border-bottom: 1px solid #F1EDE6; page-break-inside: avoid; }
   .entry-head { display: flex; align-items: center; gap: 8px; }
   .dot { width: 10px; height: 10px; border-radius: 5px; display: inline-block; }
-  .mood { color: #8A847B; margin-left: auto; }
+  /* Fixed-width slot with the face first, so faces line up in a column whatever the label length. */
+  .mood { color: #8A847B; margin-left: auto; width: 62px; flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
   .tags { margin: 4px 0 0 18px; }
   .tag { display: inline-block; background: #F1EDE6; border-radius: 10px; padding: 1px 8px; margin: 2px 4px 0 0; font-size: 11px; }
   .note { margin: 6px 0 0 18px; white-space: pre-wrap; line-height: 1.45; }

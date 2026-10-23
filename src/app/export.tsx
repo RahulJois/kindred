@@ -6,12 +6,15 @@ import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Button, Card, Chip, SectionTitle } from '../components/ui';
+import { Button, Card, Chip, SectionTitle, Segmented } from '../components/ui';
+import { buildEntriesCsv } from '../csvExport';
 import { useQuery } from '../data';
 import { addDays, daysBetween, formatMedium, fromKey, toKey, todayKey, type DayKey } from '../dates';
 import { getEntries, getTags } from '../db';
 import { buildReportHtml } from '../pdf';
 import { useTheme } from '../theme';
+
+type Format = 'pdf' | 'csv';
 
 type Preset = 'month' | '30' | '90' | 'year' | 'all' | 'custom';
 
@@ -45,6 +48,7 @@ export default function ExportScreen() {
   const db = useSQLiteContext();
   const first = useQuery(async (db) => (await db.getFirstAsync<{ d: string | null }>('SELECT min(date) AS d FROM entries'))?.d ?? null);
 
+  const [format, setFormat] = useState<Format>('pdf');
   const [preset, setPreset] = useState<Preset>('month');
   const [custom, setCustom] = useState<[DayKey, DayKey]>(() => presetRange('month', null));
   const [includeNotes, setIncludeNotes] = useState(true);
@@ -71,10 +75,18 @@ export default function ExportScreen() {
       },
     });
 
-  const exportPdf = async () => {
+  const exportFile = async () => {
     setBusy(true);
     try {
       const [entries, tags] = await Promise.all([getEntries(db, from, to), getTags(db)]);
+      if (format === 'csv') {
+        const csv = new File(Paths.cache, `kindred-mood-${from}-to-${to}.csv`);
+        if (csv.exists) csv.delete();
+        csv.create();
+        csv.write(buildEntriesCsv({ entries, tags, includeNotes, includeTags }));
+        await Sharing.shareAsync(csv.uri, { mimeType: 'text/csv', dialogTitle: 'Share mood data' });
+        return;
+      }
       const html = buildReportHtml({ from, to, entries, tags, includeNotes, includeTags });
       const { uri } = await Print.printToFileAsync({ html });
       // expo-print names the file with a random UUID; give it a name that means something when saved.
@@ -83,7 +95,7 @@ export default function ExportScreen() {
       new File(uri).move(pdf);
       await Sharing.shareAsync(pdf.uri, { mimeType: 'application/pdf', dialogTitle: 'Share mood report' });
     } catch (e) {
-      Alert.alert("Couldn't create the PDF", String(e));
+      Alert.alert(`Couldn't create the ${format.toUpperCase()}`, String(e));
     } finally {
       setBusy(false);
     }
@@ -91,6 +103,16 @@ export default function ExportScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={styles.content}>
+      <SectionTitle>Format</SectionTitle>
+      <Segmented
+        options={[
+          { value: 'pdf', label: 'PDF report' },
+          { value: 'csv', label: 'CSV data' },
+        ]}
+        value={format}
+        onChange={setFormat}
+      />
+
       <SectionTitle>Date range</SectionTitle>
       <View style={styles.chips}>
         {PRESETS.map((p) => (
@@ -117,14 +139,17 @@ export default function ExportScreen() {
       <SectionTitle>Include</SectionTitle>
       <Card style={{ paddingVertical: 4 }}>
         <ToggleRow label="Notes" value={includeNotes} onChange={setIncludeNotes} />
-        <ToggleRow label="Tags and tag patterns" value={includeTags} onChange={setIncludeTags} last />
+        <ToggleRow label={format === 'pdf' ? 'Tags and tag patterns' : 'Tags'} value={includeTags} onChange={setIncludeTags} last />
       </Card>
 
       <View style={{ marginTop: 24 }}>
-        {busy ? <ActivityIndicator color={t.accent} /> : <Button title="Create PDF" onPress={exportPdf} disabled={!count} />}
+        {busy ? <ActivityIndicator color={t.accent} /> : <Button title={format === 'pdf' ? 'Create PDF' : 'Create CSV'} onPress={exportFile} disabled={!count} />}
       </View>
       <Text style={[styles.hint, { color: t.muted }]}>
-        The report has a summary, a color calendar for each month, and every entry. You can save or send it from the share sheet.
+        {format === 'pdf'
+          ? 'The report has a summary, a color calendar for each month, and every entry.'
+          : 'One row per day with the date, mood (1–5), tags and note. Opens in any spreadsheet app.'}{' '}
+        You can save or send it from the share sheet.
       </Text>
     </ScrollView>
   );

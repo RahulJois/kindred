@@ -32,7 +32,8 @@ export default function RootLayout() {
                 options={({ route }) => ({ title: formatShort((route.params as { date: string }).date) })}
               />
               <Stack.Screen name="tags" options={{ title: 'Tags' }} />
-              <Stack.Screen name="export" options={{ title: 'Export PDF' }} />
+              <Stack.Screen name="export" options={{ title: 'Export' }} />
+              <Stack.Screen name="import" options={{ title: 'Import from Daylio' }} />
             </Stack>
           </DataProvider>
         </ThemeProvider>

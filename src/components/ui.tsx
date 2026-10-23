@@ -48,14 +48,20 @@ export function Button({
   );
 }
 
-export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress?: () => void }) {
+export function Chip({ label, emoji, selected, onPress }: { label: string; emoji?: string; selected?: boolean; onPress?: () => void }) {
   const t = useTheme();
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      accessibilityState={{ selected }}
       style={[styles.chip, { borderColor: selected ? t.accent : t.border, backgroundColor: selected ? t.accent + '22' : t.card }]}>
-      <Text style={{ color: t.text, fontSize: 14 }}>{label}</Text>
+      {/* The emoji gets its own Text: Android measures "💼 Work" as one run but draws the emoji wider,
+          so the name wrapped onto a clipped second line and only the emoji showed. */}
+      {emoji ? <Text style={styles.chipEmoji}>{emoji}</Text> : null}
+      <Text style={{ color: t.text, fontSize: 14, flexShrink: 1 }} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -90,7 +96,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, marginTop: 20 },
   button: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5 },
   buttonText: { fontSize: 16, fontWeight: '600' },
-  chip: { borderRadius: 20, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8, marginBottom: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8, marginBottom: 8 },
+  chipEmoji: { fontSize: 14, marginRight: 5 },
   segmented: { flexDirection: 'row', borderRadius: 12, padding: 3 },
   segment: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 9 },
 });
