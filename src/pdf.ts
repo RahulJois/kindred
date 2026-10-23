@@ -1,8 +1,8 @@
 import { addDays, dayKey, daysBetween, daysInMonth, formatLong, formatMedium, fromKey, MONTHS, todayKey, WEEKDAYS_SHORT, type DayKey } from './dates';
 import type { Entry, Tag } from './db';
-import { FACE_CIRCLE, FACE_STROKE_WIDTH, FACES } from './faces';
+import { FACE_CIRCLE, FACE_STROKE_WIDTH, FACES, type PaletteId } from './faces';
 import { computeInsights, MIN_TAG_DAYS } from './insights';
-import { MOODS, moodInfo } from './moods';
+import { faceColors, MOODS, moodInfo } from './moods';
 
 export type ReportOptions = {
   from: DayKey;
@@ -11,13 +11,15 @@ export type ReportOptions = {
   tags: Tag[];
   includeNotes: boolean;
   includeTags: boolean;
+  palette: PaletteId;
 };
 
 /** A mood face as inline SVG (light palette; reports are printed on white). */
-function faceSvg(mood: number, size: number, bare = false) {
+function faceSvg(p: PaletteId, mood: number, size: number, bare = false) {
   const f = FACES[Math.min(5, Math.max(1, Math.round(mood)))];
-  const ink = f.ink.light;
-  const circle = bare ? '' : `<path d="${FACE_CIRCLE}" fill="${f.fill.light}" stroke="#000" stroke-opacity="0.14" stroke-width="0.8"/>`;
+  const c = faceColors(p, mood);
+  const ink = c.ink.light;
+  const circle = bare ? '' : `<path d="${FACE_CIRCLE}" fill="${c.fill.light}" stroke="#000" stroke-opacity="0.14" stroke-width="0.8"/>`;
   const features = f.features
     .map((p) =>
       p.kind === 'fill'
@@ -29,7 +31,7 @@ function faceSvg(mood: number, size: number, bare = false) {
 }
 
 /** Static version of the app's mood-over-time chart: gradient line, gaps on unlogged days. */
-function timelineSvg(from: DayKey, to: DayKey, byDate: Map<DayKey, Entry>) {
+function timelineSvg(p: PaletteId, from: DayKey, to: DayKey, byDate: Map<DayKey, Entry>) {
   const days = daysBetween(from, to);
   const W = 680;
   const H = 150;
@@ -58,14 +60,14 @@ function timelineSvg(from: DayKey, to: DayKey, byDate: Map<DayKey, Entry>) {
     if (e) {
       run.push(`${run.length ? 'L' : 'M'}${x(i).toFixed(1)},${y(e.mood)}`);
       if (!byDate.get(addDays(key, -1)) && !byDate.get(addDays(key, 1)))
-        dots.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(e.mood)}" r="3" fill="${moodInfo(e.mood).color}"/>`);
+        dots.push(`<circle cx="${x(i).toFixed(1)}" cy="${y(e.mood)}" r="3" fill="${faceColors(p, e.mood).fill.light}"/>`);
     } else flush();
   }
   flush();
   const grid = [5, 4, 3, 2, 1]
-    .map((m) => `<line x1="${left}" x2="${W}" y1="${y(m)}" y2="${y(m)}" stroke="#ECE7DF"/>` + `<g transform="translate(2,${y(m) - 8})">${faceSvg(m, 16).replace('<svg ', '<svg x="0" y="0" ')}</g>`)
+    .map((m) => `<line x1="${left}" x2="${W}" y1="${y(m)}" y2="${y(m)}" stroke="#ECE7DF"/>` + `<g transform="translate(2,${y(m) - 8})">${faceSvg(p, m, 16).replace('<svg ', '<svg x="0" y="0" ')}</g>`)
     .join('');
-  const stops = [5, 4, 3, 2, 1].map((m) => `<stop offset="${(5 - m) / 4}" stop-color="${moodInfo(m).color}"/>`).join('');
+  const stops = [5, 4, 3, 2, 1].map((m) => `<stop offset="${(5 - m) / 4}" stop-color="${faceColors(p, m).fill.light}"/>`).join('');
   return `<svg width="100%" viewBox="0 0 ${W} ${top + H + 4}" class="timeline">
     <defs><linearGradient id="g" x1="0" y1="${y(5)}" x2="0" y2="${y(1)}" gradientUnits="userSpaceOnUse">${stops}</linearGradient></defs>
     ${grid}${months}${paths}${dots.join('')}</svg>`;
@@ -89,7 +91,7 @@ function monthsInRange(from: DayKey, to: DayKey) {
   return months;
 }
 
-function monthGrid(year: number, month: number, byDate: Map<DayKey, Entry>, from: DayKey, to: DayKey) {
+function monthGrid(p: PaletteId, year: number, month: number, byDate: Map<DayKey, Entry>, from: DayKey, to: DayKey) {
   const offset = new Date(year, month, 1).getDay();
   const cells: string[] = Array.from({ length: offset }, () => '<td class="blank"></td>');
   for (let d = 1; d <= daysInMonth(year, month); d++) {
@@ -98,7 +100,7 @@ function monthGrid(year: number, month: number, byDate: Map<DayKey, Entry>, from
     const inRange = key >= from && key <= to;
     cells.push(
       entry && inRange
-        ? `<td style="background:${moodInfo(entry.mood).color}">${faceSvg(entry.mood, 16, true)}</td>`
+        ? `<td style="background:${faceColors(p, entry.mood).fill.light}">${faceSvg(p, entry.mood, 16, true)}</td>`
         : `<td class="${inRange ? 'empty' : 'out'}">${d}</td>`
     );
   }
@@ -115,7 +117,7 @@ function monthGrid(year: number, month: number, byDate: Map<DayKey, Entry>, from
     </div>`;
 }
 
-export function buildReportHtml({ from, to, entries, tags, includeNotes, includeTags }: ReportOptions) {
+export function buildReportHtml({ from, to, entries, tags, includeNotes, includeTags, palette: p }: ReportOptions) {
   const byDate = new Map(entries.map((e) => [e.date, e]));
   const tagById = new Map(tags.map((t) => [t.id, t]));
   const stats = computeInsights(entries, tags);
@@ -125,11 +127,11 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
   const distribution = MOODS.map((m) => {
     const n = stats.distribution[m.value];
     const pct = stats.count ? (n / stats.count) * 100 : 0;
-    return pct > 0 ? `<div style="width:${pct}%;background:${m.color}" title="${m.label}"></div>` : '';
+    return pct > 0 ? `<div style="width:${pct}%;background:${faceColors(p, m.value).fill.light}" title="${m.label}"></div>` : '';
   }).join('');
 
   const legend = MOODS.map(
-    (m) => `<span class="legend">${faceSvg(m.value, 12)} ${m.label} · ${stats.distribution[m.value]}</span>`
+    (m) => `<span class="legend">${faceSvg(p, m.value, 12)} ${m.label} · ${stats.distribution[m.value]}</span>`
   ).join('');
 
   const tagRows = stats.tags
@@ -138,7 +140,7 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
       (s) => `<tr>
         <td>${esc(s.tag.emoji)} ${esc(s.tag.name)}</td>
         <td>${s.count}</td>
-        <td>${faceSvg(s.average, 14)} ${s.average.toFixed(1)}</td>
+        <td>${faceSvg(p, s.average, 14)} ${s.average.toFixed(1)}</td>
         <td class="${s.delta >= 0 ? 'up' : 'down'}">${s.delta >= 0 ? '+' : ''}${s.delta.toFixed(1)}</td>
       </tr>`
     )
@@ -158,9 +160,9 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
       const note = includeNotes && e.note.trim() ? `<div class="note">${esc(e.note.trim())}</div>` : '';
       return `<div class="entry">
         <div class="entry-head">
-          <span class="dot" style="background:${m.color}"></span>
+          <span class="dot" style="background:${faceColors(p, m.value).fill.light}"></span>
           <strong>${formatLong(e.date)}</strong>
-          <span class="mood">${faceSvg(m.value, 16)} ${m.label}</span>
+          <span class="mood">${faceSvg(p, m.value, 16)} ${m.label}</span>
         </div>
         ${tagText ? `<div class="tags">${tagText}</div>` : ''}
         ${note}
@@ -213,7 +215,7 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
 
   <div class="stats">
     <div class="stat"><b>${stats.count} / ${totalDays}</b><span>days logged</span></div>
-    <div class="stat"><b>${avg == null ? '—' : `${faceSvg(avg, 18)} ${avg.toFixed(1)}`}</b><span>average mood (1–5)</span></div>
+    <div class="stat"><b>${avg == null ? '—' : `${faceSvg(p, avg, 18)} ${avg.toFixed(1)}`}</b><span>average mood (1–5)</span></div>
     <div class="stat"><b>${stats.distribution[5] + stats.distribution[4]}</b><span>good or great days</span></div>
     <div class="stat"><b>${stats.distribution[1] + stats.distribution[2]}</b><span>bad or awful days</span></div>
   </div>
@@ -221,10 +223,10 @@ export function buildReportHtml({ from, to, entries, tags, includeNotes, include
   <div>${legend}</div>
 
   <h2>Mood over time</h2>
-  ${timelineSvg(from, to, byDate)}
+  ${timelineSvg(p, from, to, byDate)}
 
   <h2>Calendar</h2>
-  <div class="months">${monthsInRange(from, to).map(({ year, month }) => monthGrid(year, month, byDate, from, to)).join('')}</div>
+  <div class="months">${monthsInRange(from, to).map(({ year, month }) => monthGrid(p, year, month, byDate, from, to)).join('')}</div>
 
   ${
     includeTags && tagRows

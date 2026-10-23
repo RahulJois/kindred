@@ -11,6 +11,7 @@ import { buildEntriesCsv } from '../csvExport';
 import { useQuery } from '../data';
 import { addDays, daysBetween, formatMedium, fromKey, toKey, todayKey, type DayKey } from '../dates';
 import { getEntries, getTags } from '../db';
+import { usePalette } from '../palette';
 import { buildReportHtml } from '../pdf';
 import { useTheme } from '../theme';
 
@@ -46,6 +47,7 @@ function presetRange(preset: Preset, firstEntry: DayKey | null): [DayKey, DayKey
 export default function ExportScreen() {
   const t = useTheme();
   const db = useSQLiteContext();
+  const { palette } = usePalette();
   const first = useQuery(async (db) => (await db.getFirstAsync<{ d: string | null }>('SELECT min(date) AS d FROM entries'))?.d ?? null);
 
   const [format, setFormat] = useState<Format>('pdf');
@@ -87,7 +89,7 @@ export default function ExportScreen() {
         await Sharing.shareAsync(csv.uri, { mimeType: 'text/csv', dialogTitle: 'Share mood data' });
         return;
       }
-      const html = buildReportHtml({ from, to, entries, tags, includeNotes, includeTags });
+      const html = buildReportHtml({ from, to, entries, tags, includeNotes, includeTags, palette });
       const { uri } = await Print.printToFileAsync({ html });
       // expo-print names the file with a random UUID; give it a name that means something when saved.
       const pdf = new File(Paths.cache, `kindred-mood-${from}-to-${to}.pdf`);

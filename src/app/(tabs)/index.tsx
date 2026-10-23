@@ -34,7 +34,8 @@ export default function JournalScreen() {
   const today = todayKey();
   const data = useQuery(
     async (db) => ({
-      entries: await getEntries(db, `${year}-01-01`, `${year}-12-31`),
+      // A week either side of the year, for the neighbouring-month days the month calendar shows.
+      entries: await getEntries(db, `${year - 1}-12-25`, `${year + 1}-01-07`),
       todayEntry: (await getEntries(db, today, today))[0] ?? null,
       tags: await getTags(db),
     }),
@@ -69,7 +70,8 @@ export default function JournalScreen() {
   };
   const atPresent = mode === 'year' ? year >= now.getFullYear() : year * 12 + month >= now.getFullYear() * 12 + now.getMonth();
 
-  const monthEntries = (data?.entries ?? []).filter((e) => fromKey(e.date).getMonth() === month);
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+  const monthEntries = (data?.entries ?? []).filter((e) => e.date.startsWith(monthPrefix));
 
   return (
     <>

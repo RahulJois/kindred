@@ -67,6 +67,13 @@ class KindredNativeModule : Module() {
       MoodWidgetProvider.refreshAll(context)
     }
 
+    Function("setPalette") { id: String ->
+      val store = MoodStore(context)
+      if (store.palette == id) return@Function
+      store.palette = id
+      MoodWidgetProvider.refreshAll(context)
+    }
+
     Function("showCheckInNow") {
       MoodNotification.show(context, Moods.dayKey())
     }

@@ -13,6 +13,8 @@ declare class KindredNativeModule extends NativeModule<KindredNativeEvents> {
   openExactAlarmSettings(): void;
   openNotificationSettings(): void;
   requestPinWidget(): boolean;
+  /** Mood color scheme for the widget and notification faces ('kindred' or 'classic'). */
+  setPalette(id: string): void;
 }
 
 // Optional so the JS side still loads in Expo Go / web, where the native module is absent.
