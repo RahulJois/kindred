@@ -111,5 +111,12 @@ class KindredNativeModule : Module() {
       if (!manager.isRequestPinAppWidgetSupported) return@Function false
       manager.requestPinAppWidget(ComponentName(context, MoodWidgetProvider::class.java), null, null)
     }
+
+    /** Blanks the app's preview in Recents while the app lock is on. Android 13+; a no-op before that. */
+    Function("setHideInRecents") { hide: Boolean ->
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@Function
+      val activity = appContext.currentActivity ?: return@Function
+      activity.runOnUiThread { activity.setRecentsScreenshotEnabled(!hide) }
+    }
   }
 }

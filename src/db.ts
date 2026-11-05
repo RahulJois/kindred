@@ -88,6 +88,29 @@ export async function getEntries(db: SQLiteDatabase, from: DayKey = '0000-01-01'
   return rows.map(toEntry);
 }
 
+/**
+ * Days whose note or one of whose tags contains `text` (case-insensitive), newest first.
+ * `mood` narrows to one mood; an empty `text` with a mood lists every day with that mood.
+ */
+export async function searchEntries(db: SQLiteDatabase, text: string, mood: number | null, limit = 200) {
+  const pattern = `%${text.trim().replace(/[\\%_]/g, (c) => '\\' + c)}%`;
+  const rows = await db.getAllAsync<EntryRow>(
+    `SELECT e.date, e.mood, e.note, group_concat(et.tag_id) AS tag_ids
+       FROM entries e LEFT JOIN entry_tags et ON et.date = e.date
+      WHERE (?1 IS NULL OR e.mood = ?1)
+        AND (e.note LIKE ?2 ESCAPE '\\' OR EXISTS (
+              SELECT 1 FROM entry_tags x JOIN tags t ON t.id = x.tag_id
+               WHERE x.date = e.date AND t.name LIKE ?2 ESCAPE '\\'))
+      GROUP BY e.date
+      ORDER BY e.date DESC
+      LIMIT ?3`,
+    mood,
+    pattern,
+    limit
+  );
+  return rows.map(toEntry);
+}
+
 export async function getEntry(db: SQLiteDatabase, date: DayKey) {
   const [entry] = await getEntries(db, date, date);
   return entry ?? null;

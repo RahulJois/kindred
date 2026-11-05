@@ -11,6 +11,7 @@ import { Card, SectionTitle, StatusBarBackdrop } from '../../components/ui';
 import { requestNotificationPermission } from '../../data';
 import { formatTime } from '../../dates';
 import { PALETTES, type PaletteId } from '../../faces';
+import { useAppLock } from '../../lock';
 import { MOODS } from '../../moods';
 import { usePalette } from '../../palette';
 import { useTheme } from '../../theme';
@@ -66,6 +67,7 @@ export default function SettingsScreen() {
   };
 
   const { reminder } = status;
+  const lock = useAppLock();
 
   return (
     <>
@@ -120,6 +122,18 @@ export default function SettingsScreen() {
           {(Object.keys(PALETTES) as PaletteId[]).map((id, i, all) => (
             <PaletteRow key={id} id={id} last={i === all.length - 1} />
           ))}
+        </Card>
+
+        <SectionTitle>Privacy</SectionTitle>
+        <Card style={styles.group}>
+          <Row label="Lock Kindred" sublabel="Ask for your fingerprint, face or PIN when opening the app" icon="lock-closed-outline" last>
+            <Switch
+              value={lock.enabled}
+              onValueChange={(on) => lock.setEnabled(on)}
+              trackColor={{ true: t.accent + '77', false: t.border }}
+              thumbColor={lock.enabled ? t.accent : t.card}
+            />
+          </Row>
         </Card>
 
         <SectionTitle>Your data</SectionTitle>

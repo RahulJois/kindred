@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataProvider } from '../data';
 import { formatShort } from '../dates';
 import { migrate } from '../db';
+import { LockProvider } from '../lock';
 import { PaletteProvider } from '../palette';
 import { useTheme } from '../theme';
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
         <ThemeProvider value={navTheme}>
           <DataProvider>
             <PaletteProvider>
+              <LockProvider>
               <Stack screenOptions={{ headerShadowVisible: false }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 {/* Title is set here, not from inside the screen: updating header options while the
@@ -36,7 +38,9 @@ export default function RootLayout() {
                 <Stack.Screen name="tags" options={{ title: 'Tags' }} />
                 <Stack.Screen name="export" options={{ title: 'Export' }} />
                 <Stack.Screen name="import" options={{ title: 'Import from Daylio' }} />
+                <Stack.Screen name="search" options={{ title: 'Search' }} />
               </Stack>
+              </LockProvider>
             </PaletteProvider>
           </DataProvider>
         </ThemeProvider>

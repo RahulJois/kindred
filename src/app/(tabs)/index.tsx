@@ -78,7 +78,12 @@ export default function JournalScreen() {
       <ScrollView
         style={{ backgroundColor: t.background }}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: t.text }]}>Kindred</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: t.text }]}>Kindred</Text>
+          <Pressable onPress={() => router.push('/search')} hitSlop={10} accessibilityLabel="Search entries">
+            <Ionicons name="search" size={24} color={t.text} />
+          </Pressable>
+        </View>
         <Text style={[styles.subtitle, { color: t.muted }]}>{formatLong(today)}</Text>
 
         <TodayCard entry={data?.todayEntry ?? null} tagById={tagById} onLog={quickLog} onOpen={() => openDay(today)} />
@@ -211,6 +216,7 @@ function EntryRow({ entry, tagById, onPress }: { entry: Entry; tagById: Map<numb
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 32 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 30, fontWeight: '800' },
   subtitle: { fontSize: 14, marginBottom: 16 },
   today: { marginBottom: 20 },
