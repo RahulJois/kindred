@@ -140,7 +140,7 @@ export default function SettingsScreen() {
         <Card style={styles.group}>
           <Row label="Edit tags" icon="pricetags-outline" onPress={() => router.push('/tags')} />
           <Row label="Export as PDF or CSV" icon="document-text-outline" onPress={() => router.push('/export')} />
-          <Row label="Import from Daylio" sublabel="Bring over your moods, activities and notes" icon="download-outline" onPress={() => router.push('/import')} last />
+          <Row label="Import entries" sublabel="Restore a Kindred CSV, or bring over Daylio" icon="download-outline" onPress={() => router.push('/import')} last />
         </Card>
 
         <Text style={[styles.footer, { color: t.muted }]}>Kindred keeps everything on this phone. Nothing is uploaded.</Text>

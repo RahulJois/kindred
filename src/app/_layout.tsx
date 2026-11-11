@@ -37,7 +37,7 @@ export default function RootLayout() {
                 />
                 <Stack.Screen name="tags" options={{ title: 'Tags' }} />
                 <Stack.Screen name="export" options={{ title: 'Export' }} />
-                <Stack.Screen name="import" options={{ title: 'Import from Daylio' }} />
+                <Stack.Screen name="import" options={{ title: 'Import' }} />
                 <Stack.Screen name="search" options={{ title: 'Search' }} />
               </Stack>
               </LockProvider>

@@ -9,7 +9,8 @@ import { Button, Card, SectionTitle } from '../components/ui';
 import { notifyDayMood, useRefresh } from '../data';
 import { formatMedium, todayKey } from '../dates';
 import { getTags, importDays } from '../db';
-import { parseDaylio, toDays, type ParsedImport } from '../import/daylio';
+import { toDays, type ParsedImport } from '../import/daylio';
+import { parseImport } from '../import/kindred';
 import { MOODS, type MoodValue } from '../moods';
 import { useTheme } from '../theme';
 
@@ -29,7 +30,7 @@ export default function ImportScreen() {
       const picked = await File.pickFileAsync();
       if (picked.canceled) return;
       setBusy(true);
-      const parsed = parseDaylio(await picked.result.text());
+      const parsed = parseImport(await picked.result.text());
       const [dates, tags] = await Promise.all([db.getAllAsync<{ date: string }>('SELECT date FROM entries'), getTags(db)]);
       setLoaded({
         ...parsed,
@@ -67,7 +68,7 @@ export default function ImportScreen() {
     if (!preview) return;
     setBusy(true);
     try {
-      const res = await importDays(db, preview.days, replaceExisting);
+      const res = await importDays(db, preview.days, replaceExisting, loaded!.tagEmojis);
       const today = preview.days.find((d) => d.date === todayKey());
       if (today && (replaceExisting || !loaded!.existingDates.has(today.date))) notifyDayMood(today.date, today.mood);
       refresh();
@@ -89,13 +90,13 @@ export default function ImportScreen() {
   return (
     <ScrollView style={{ backgroundColor: t.background }} contentContainerStyle={styles.content}>
       <Card>
-        <Text style={[styles.heading, { color: t.text }]}>Bring your Daylio history</Text>
+        <Text style={[styles.heading, { color: t.text }]}>Bring your history</Text>
         <Text style={{ color: t.muted, lineHeight: 20, marginTop: 6 }}>
-          In Daylio, open More → Export Entries → CSV and save the file. Then choose it here. Your moods, activities and notes come
-          across; activities become tags.
+          Restore a CSV you exported from Kindred (Settings → Export as PDF or CSV, with tags and notes), or bring over Daylio: open More →
+          Export Entries → CSV there. Moods, tags and notes come across; Daylio activities become tags.
         </Text>
         <View style={{ marginTop: 14 }}>
-          <Button title={loaded ? 'Choose a different file' : 'Choose Daylio CSV'} variant={loaded ? 'secondary' : 'primary'} onPress={choose} disabled={busy} />
+          <Button title={loaded ? 'Choose a different file' : 'Choose CSV file'} variant={loaded ? 'secondary' : 'primary'} onPress={choose} disabled={busy} />
         </View>
       </Card>
 
@@ -107,12 +108,12 @@ export default function ImportScreen() {
               {preview.days.length} {preview.days.length === 1 ? 'day' : 'days'}
             </Text>
             <Text style={{ color: t.muted, marginTop: 2 }}>
-              {formatMedium(preview.first)} – {formatMedium(preview.last)}
+              {loaded.source === 'kindred' ? 'Kindred export' : 'Daylio export'} · {formatMedium(preview.first)} – {formatMedium(preview.last)}
             </Text>
             <View style={[styles.facts, { borderColor: t.border }]}>
               {preview.activities > 0 && (
                 <Fact>
-                  {preview.activities} {preview.activities === 1 ? 'activity' : 'activities'}
+                  {preview.activities} {noun(preview.activities, loaded.source === 'kindred' ? 'tag' : 'activity')}
                   {preview.newTags ? `, ${preview.newTags} will be new ${preview.newTags === 1 ? 'tag' : 'tags'}` : ', all match your tags'}
                 </Fact>
               )}
@@ -130,8 +131,9 @@ export default function ImportScreen() {
             </View>
           </Card>
 
-          <SectionTitle>Moods</SectionTitle>
-          <Card style={{ paddingVertical: 4 }}>
+          {/* Kindred's own moods map one to one; only Daylio's (possibly renamed) moods need matching. */}
+          {loaded.source === 'daylio' && <SectionTitle>Moods</SectionTitle>}
+          <Card style={{ paddingVertical: 4, display: loaded.source === 'daylio' ? 'flex' : 'none' }}>
             {loaded.moodLabels.map((m, i) => (
               <View
                 key={m.label}
@@ -166,7 +168,7 @@ export default function ImportScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontSize: 16 }}>Replace days already in Kindred</Text>
                   <Text style={{ color: t.muted, fontSize: 13, marginTop: 2 }}>
-                    {replaceExisting ? 'Daylio wins for those days, including tags and notes' : 'Your Kindred entries stay as they are'}
+                    {replaceExisting ? 'The file wins for those days, including tags and notes' : 'Your Kindred entries stay as they are'}
                   </Text>
                 </View>
                 <Switch
@@ -196,6 +198,8 @@ export default function ImportScreen() {
     </ScrollView>
   );
 }
+
+const noun = (n: number, word: string) => (n === 1 ? word : word === 'activity' ? 'activities' : word + 's');
 
 function Fact({ children }: { children: React.ReactNode }) {
   const t = useTheme();

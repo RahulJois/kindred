@@ -6,7 +6,10 @@ import { parseCsvRecords } from './csv';
 export type SourceRow = { date: DayKey; minutes: number; moodLabel: string; activities: string[]; note: string };
 
 export type ParsedImport = {
+  source: 'daylio' | 'kindred';
   rows: SourceRow[];
+  /** Emoji for each tag name (lowercased), used when the import has to create the tag. */
+  tagEmojis: Record<string, string>;
   /** Every mood name in the file with how often it appears; `mood` is our best guess, null if unknown. */
   moodLabels: { label: string; count: number; mood: MoodValue | null }[];
 };
@@ -73,7 +76,7 @@ export function parseDaylio(text: string): ParsedImport {
     .map(([label, count]) => ({ label, count, mood: DAYLIO_MOODS[label.toLowerCase()] ?? null }))
     // Known moods best-first, then unknown ones by how common they are.
     .sort((a, b) => (b.mood ?? 0) - (a.mood ?? 0) || b.count - a.count);
-  return { rows, moodLabels };
+  return { source: 'daylio', rows, moodLabels, tagEmojis: {} };
 }
 
 /**

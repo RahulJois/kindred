@@ -212,7 +212,9 @@ export const DEFAULT_TAG_EMOJI = '🏷️';
 export async function importDays(
   db: SQLiteDatabase,
   days: { date: DayKey; mood: number; note: string; tagNames: string[] }[],
-  replaceExisting: boolean
+  replaceExisting: boolean,
+  /** Emoji for tags the import creates, keyed by lowercased name. Existing tags keep theirs. */
+  tagEmojis: Record<string, string> = {}
 ) {
   const result = { added: 0, replaced: 0, skipped: 0, tagsCreated: 0 };
   await db.withTransactionAsync(async () => {
@@ -234,7 +236,7 @@ export async function importDays(
         const key = name.trim().toLowerCase();
         let id = tagIds.get(key);
         if (id == null) {
-          id = (await db.runAsync('INSERT INTO tags (name, emoji) VALUES (?, ?)', name.trim(), DEFAULT_TAG_EMOJI)).lastInsertRowId;
+          id = (await db.runAsync('INSERT INTO tags (name, emoji) VALUES (?, ?)', name.trim(), tagEmojis[key] || DEFAULT_TAG_EMOJI)).lastInsertRowId;
           tagIds.set(key, id);
           result.tagsCreated++;
         }
