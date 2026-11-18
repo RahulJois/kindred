@@ -88,6 +88,29 @@ export async function getEntries(db: SQLiteDatabase, from: DayKey = '0000-01-01'
   return rows.map(toEntry);
 }
 
+/**
+ * Days whose note or one of whose tags contains `text` (case-insensitive), newest first.
+ * `mood` narrows to one mood; an empty `text` with a mood lists every day with that mood.
+ */
+export async function searchEntries(db: SQLiteDatabase, text: string, mood: number | null, limit = 200) {
+  const pattern = `%${text.trim().replace(/[\\%_]/g, (c) => '\\' + c)}%`;
+  const rows = await db.getAllAsync<EntryRow>(
+    `SELECT e.date, e.mood, e.note, group_concat(et.tag_id) AS tag_ids
+       FROM entries e LEFT JOIN entry_tags et ON et.date = e.date
+      WHERE (?1 IS NULL OR e.mood = ?1)
+        AND (e.note LIKE ?2 ESCAPE '\\' OR EXISTS (
+              SELECT 1 FROM entry_tags x JOIN tags t ON t.id = x.tag_id
+               WHERE x.date = e.date AND t.name LIKE ?2 ESCAPE '\\'))
+      GROUP BY e.date
+      ORDER BY e.date DESC
+      LIMIT ?3`,
+    mood,
+    pattern,
+    limit
+  );
+  return rows.map(toEntry);
+}
+
 export async function getEntry(db: SQLiteDatabase, date: DayKey) {
   const [entry] = await getEntries(db, date, date);
   return entry ?? null;
@@ -172,6 +195,78 @@ export async function getTags(db: SQLiteDatabase) {
 
 export async function addTag(db: SQLiteDatabase, emoji: string, name: string) {
   await db.runAsync('INSERT INTO tags (name, emoji) VALUES (?, ?)', name, emoji);
+}
+
+export async function updateTag(db: SQLiteDatabase, id: number, emoji: string, name: string) {
+  await db.runAsync('UPDATE tags SET emoji = ?, name = ? WHERE id = ?', emoji, name, id);
+}
+
+export const DEFAULT_TAG_EMOJI = '🏷️';
+
+/**
+ * Writes imported days in one transaction. Tags are matched to existing ones by name (ignoring
+ * case) and created when missing. Days already in Kindred are kept unless `replaceExisting`.
+ * Rows go in as one JSON parameter expanded by json_each, so a year of history is a handful of
+ * statements instead of one native call per row.
+ */
+export async function importDays(
+  db: SQLiteDatabase,
+  days: { date: DayKey; mood: number; note: string; tagNames: string[] }[],
+  replaceExisting: boolean,
+  /** Emoji for tags the import creates, keyed by lowercased name. Existing tags keep theirs. */
+  tagEmojis: Record<string, string> = {}
+) {
+  const result = { added: 0, replaced: 0, skipped: 0, tagsCreated: 0 };
+  await db.withTransactionAsync(async () => {
+    const tagIds = new Map((await getTags(db)).map((t) => [t.name.trim().toLowerCase(), t.id]));
+    const existing = new Set((await db.getAllAsync<{ date: string }>('SELECT date FROM entries')).map((r) => r.date));
+
+    const rows: { date: DayKey; mood: number; note: string }[] = [];
+    const links: [DayKey, number][] = [];
+    for (const day of days) {
+      if (existing.has(day.date)) {
+        if (!replaceExisting) {
+          result.skipped++;
+          continue;
+        }
+        result.replaced++;
+      } else result.added++;
+      rows.push({ date: day.date, mood: day.mood, note: day.note });
+      for (const name of day.tagNames) {
+        const key = name.trim().toLowerCase();
+        let id = tagIds.get(key);
+        if (id == null) {
+          id = (await db.runAsync('INSERT INTO tags (name, emoji) VALUES (?, ?)', name.trim(), tagEmojis[key] || DEFAULT_TAG_EMOJI)).lastInsertRowId;
+          tagIds.set(key, id);
+          result.tagsCreated++;
+        }
+        links.push([day.date, id]);
+      }
+    }
+    if (rows.length === 0) return;
+
+    const now = Date.now();
+    const json = JSON.stringify(rows);
+    await db.runAsync(
+      `INSERT INTO entries (date, mood, note, created_at, updated_at)
+       SELECT json_extract(value, '$.date'), json_extract(value, '$.mood'), json_extract(value, '$.note'), ?, ?
+         FROM json_each(?) WHERE true
+       ON CONFLICT(date) DO UPDATE SET mood = excluded.mood, note = excluded.note, updated_at = excluded.updated_at`,
+      now,
+      now,
+      json
+    );
+    await db.runAsync(
+      `DELETE FROM entry_tags WHERE date IN (SELECT json_extract(value, '$.date') FROM json_each(?))`,
+      json
+    );
+    await db.runAsync(
+      `INSERT OR IGNORE INTO entry_tags (date, tag_id)
+       SELECT json_extract(value, '$[0]'), json_extract(value, '$[1]') FROM json_each(?)`,
+      JSON.stringify(links)
+    );
+  });
+  return result;
 }
 
 /** Tags are archived rather than deleted so past entries keep their history. */

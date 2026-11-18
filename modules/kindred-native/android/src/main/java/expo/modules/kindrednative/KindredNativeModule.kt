@@ -67,6 +67,13 @@ class KindredNativeModule : Module() {
       MoodWidgetProvider.refreshAll(context)
     }
 
+    Function("setPalette") { id: String ->
+      val store = MoodStore(context)
+      if (store.palette == id) return@Function
+      store.palette = id
+      MoodWidgetProvider.refreshAll(context)
+    }
+
     Function("showCheckInNow") {
       MoodNotification.show(context, Moods.dayKey())
     }
@@ -103,6 +110,13 @@ class KindredNativeModule : Module() {
       val manager = AppWidgetManager.getInstance(context)
       if (!manager.isRequestPinAppWidgetSupported) return@Function false
       manager.requestPinAppWidget(ComponentName(context, MoodWidgetProvider::class.java), null, null)
+    }
+
+    /** Blanks the app's preview in Recents while the app lock is on. Android 13+; a no-op before that. */
+    Function("setHideInRecents") { hide: Boolean ->
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@Function
+      val activity = appContext.currentActivity ?: return@Function
+      activity.runOnUiThread { activity.setRecentsScreenshotEnabled(!hide) }
     }
   }
 }

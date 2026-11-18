@@ -29,6 +29,7 @@
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:importantForAccessibility="no"
+        android:id="@+id/kindred_face_img_5"
         android:src="@drawable/kindred_face_5" />
       <TextView
         android:layout_width="wrap_content"
@@ -52,6 +53,7 @@
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:importantForAccessibility="no"
+        android:id="@+id/kindred_face_img_4"
         android:src="@drawable/kindred_face_4" />
       <TextView
         android:layout_width="wrap_content"
@@ -75,6 +77,7 @@
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:importantForAccessibility="no"
+        android:id="@+id/kindred_face_img_3"
         android:src="@drawable/kindred_face_3" />
       <TextView
         android:layout_width="wrap_content"
@@ -98,6 +101,7 @@
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:importantForAccessibility="no"
+        android:id="@+id/kindred_face_img_2"
         android:src="@drawable/kindred_face_2" />
       <TextView
         android:layout_width="wrap_content"
@@ -121,6 +125,7 @@
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:importantForAccessibility="no"
+        android:id="@+id/kindred_face_img_1"
         android:src="@drawable/kindred_face_1" />
       <TextView
         android:layout_width="wrap_content"

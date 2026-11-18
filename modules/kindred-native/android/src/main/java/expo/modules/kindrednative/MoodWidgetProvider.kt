@@ -19,7 +19,9 @@ class MoodWidgetProvider : AppWidgetProvider() {
     }
 
     private fun render(context: Context): RemoteViews {
-      val today = MoodStore(context).todayMood()
+      val store = MoodStore(context)
+      val today = store.todayMood()
+      val palette = store.palette
       val views = RemoteViews(context.packageName, R.layout.kindred_widget)
       views.setTextViewText(
         R.id.kindred_widget_title,
@@ -33,6 +35,7 @@ class MoodWidgetProvider : AppWidgetProvider() {
         // No date extra: the widget always logs whatever day it is when tapped.
         views.setOnClickPendingIntent(id, MoodNotification.logMoodIntent(context, mood, null, requestCode = 20 + mood))
         views.setInt(id, "setBackgroundResource", if (mood == today) R.drawable.kindred_mood_selected else 0)
+        views.setImageViewResource(Moods.faceViewId(mood), Moods.face(mood, palette))
       }
       return views
     }

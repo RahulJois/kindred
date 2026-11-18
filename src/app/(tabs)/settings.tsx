@@ -6,9 +6,14 @@ import { Alert, AppState, Pressable, ScrollView, StyleSheet, Switch, Text, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import KindredNative, { type ReminderSettings } from '../../../modules/kindred-native';
+import { MoodFace } from '../../components/MoodFace';
 import { Card, SectionTitle, StatusBarBackdrop } from '../../components/ui';
 import { requestNotificationPermission } from '../../data';
 import { formatTime } from '../../dates';
+import { PALETTES, type PaletteId } from '../../faces';
+import { useAppLock } from '../../lock';
+import { MOODS } from '../../moods';
+import { usePalette } from '../../palette';
 import { useTheme } from '../../theme';
 
 function readStatus() {
@@ -62,6 +67,7 @@ export default function SettingsScreen() {
   };
 
   const { reminder } = status;
+  const lock = useAppLock();
 
   return (
     <>
@@ -111,10 +117,30 @@ export default function SettingsScreen() {
           <Row label="Add the mood widget" sublabel="Log with one tap from your home screen" icon="apps-outline" onPress={addWidget} last />
         </Card>
 
+        <SectionTitle>Mood colors</SectionTitle>
+        <Card style={styles.group}>
+          {(Object.keys(PALETTES) as PaletteId[]).map((id, i, all) => (
+            <PaletteRow key={id} id={id} last={i === all.length - 1} />
+          ))}
+        </Card>
+
+        <SectionTitle>Privacy</SectionTitle>
+        <Card style={styles.group}>
+          <Row label="Lock Kindred" sublabel="Ask for your fingerprint, face or PIN when opening the app" icon="lock-closed-outline" last>
+            <Switch
+              value={lock.enabled}
+              onValueChange={(on) => lock.setEnabled(on)}
+              trackColor={{ true: t.accent + '77', false: t.border }}
+              thumbColor={lock.enabled ? t.accent : t.card}
+            />
+          </Row>
+        </Card>
+
         <SectionTitle>Your data</SectionTitle>
         <Card style={styles.group}>
           <Row label="Edit tags" icon="pricetags-outline" onPress={() => router.push('/tags')} />
-          <Row label="Export as PDF" icon="document-text-outline" onPress={() => router.push('/export')} last />
+          <Row label="Export as PDF or CSV" icon="document-text-outline" onPress={() => router.push('/export')} />
+          <Row label="Import entries" sublabel="Restore a Kindred CSV, or bring over Daylio" icon="download-outline" onPress={() => router.push('/import')} last />
         </Card>
 
         <Text style={[styles.footer, { color: t.muted }]}>Kindred keeps everything on this phone. Nothing is uploaded.</Text>
@@ -157,10 +183,35 @@ function Row({
   );
 }
 
+function PaletteRow({ id, last }: { id: PaletteId; last: boolean }) {
+  const t = useTheme();
+  const { palette, setPalette } = usePalette();
+  const selected = palette === id;
+  return (
+    <Pressable
+      onPress={() => setPalette(id)}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={`${PALETTES[id].name} colors`}
+      style={({ pressed }) => [styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderColor: t.border }, pressed && { opacity: 0.6 }]}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: t.text, fontSize: 16 }}>{PALETTES[id].name}</Text>
+        <View style={styles.swatches}>
+          {MOODS.map((m) => (
+            <MoodFace key={m.value} mood={m.value} size={26} palette={id} />
+          ))}
+        </View>
+      </View>
+      <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={selected ? t.accent : t.border} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 32 },
   title: { fontSize: 30, fontWeight: '800' },
   group: { paddingVertical: 0, paddingHorizontal: 14 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, minHeight: 52 },
   footer: { textAlign: 'center', marginTop: 28, fontSize: 13 },
+  swatches: { flexDirection: 'row', gap: 6, marginTop: 8 },
 });

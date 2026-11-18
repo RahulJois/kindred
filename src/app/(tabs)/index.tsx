@@ -34,7 +34,8 @@ export default function JournalScreen() {
   const today = todayKey();
   const data = useQuery(
     async (db) => ({
-      entries: await getEntries(db, `${year}-01-01`, `${year}-12-31`),
+      // A week either side of the year, for the neighbouring-month days the month calendar shows.
+      entries: await getEntries(db, `${year - 1}-12-25`, `${year + 1}-01-07`),
       todayEntry: (await getEntries(db, today, today))[0] ?? null,
       tags: await getTags(db),
     }),
@@ -69,14 +70,20 @@ export default function JournalScreen() {
   };
   const atPresent = mode === 'year' ? year >= now.getFullYear() : year * 12 + month >= now.getFullYear() * 12 + now.getMonth();
 
-  const monthEntries = (data?.entries ?? []).filter((e) => fromKey(e.date).getMonth() === month);
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+  const monthEntries = (data?.entries ?? []).filter((e) => e.date.startsWith(monthPrefix));
 
   return (
     <>
       <ScrollView
         style={{ backgroundColor: t.background }}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: t.text }]}>Kindred</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: t.text }]}>Kindred</Text>
+          <Pressable onPress={() => router.push('/search')} hitSlop={10} accessibilityLabel="Search entries">
+            <Ionicons name="search" size={24} color={t.text} />
+          </Pressable>
+        </View>
         <Text style={[styles.subtitle, { color: t.muted }]}>{formatLong(today)}</Text>
 
         <TodayCard entry={data?.todayEntry ?? null} tagById={tagById} onLog={quickLog} onOpen={() => openDay(today)} />
@@ -209,6 +216,7 @@ function EntryRow({ entry, tagById, onPress }: { entry: Entry; tagById: Map<numb
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 32 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 30, fontWeight: '800' },
   subtitle: { fontSize: 14, marginBottom: 16 },
   today: { marginBottom: 20 },

@@ -134,7 +134,7 @@ export default function DayScreen() {
         </View>
         <View style={styles.chips}>
           {visibleTags.map((tag) => (
-            <Chip key={tag.id} label={`${tag.emoji} ${tag.name}`} selected={tagIds.includes(tag.id)} onPress={() => toggleTag(tag.id)} />
+            <Chip key={tag.id} emoji={tag.emoji} label={tag.name} selected={tagIds.includes(tag.id)} onPress={() => toggleTag(tag.id)} />
           ))}
         </View>
 

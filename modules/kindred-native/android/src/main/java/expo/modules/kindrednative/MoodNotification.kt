@@ -36,7 +36,10 @@ object MoodNotification {
     ensureChannel(context)
     val small = RemoteViews(context.packageName, R.layout.kindred_notification_small)
     val big = RemoteViews(context.packageName, R.layout.kindred_notification_big)
+    val palette = MoodStore(context).palette
     for (mood in Moods.values) {
+      small.setImageViewResource(Moods.faceViewId(mood), Moods.face(mood, palette))
+      big.setImageViewResource(Moods.faceViewId(mood), Moods.face(mood, palette))
       val tap = logMoodIntent(context, mood, date, requestCode = 10 + mood)
       small.setOnClickPendingIntent(Moods.viewId(mood), tap)
       big.setOnClickPendingIntent(Moods.viewId(mood), tap)
@@ -70,7 +73,7 @@ object MoodNotification {
     val notification = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(R.drawable.kindred_ic_stat)
       .setContentTitle("Logged · ${Moods.label(mood)}")
-      .setLargeIcon(ContextCompat.getDrawable(context, Moods.face(mood))?.toBitmap(128, 128))
+      .setLargeIcon(ContextCompat.getDrawable(context, Moods.face(mood, MoodStore(context).palette))?.toBitmap(128, 128))
       .setContentText("Tap to add tags or a note")
       .setContentIntent(openAppIntent(context))
       .addAction(0, "Undo", undo)

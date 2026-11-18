@@ -28,6 +28,11 @@ class MoodStore(context: Context) {
     get() = prefs.getInt("reminderMinute", 0)
     set(value) { prefs.edit().putInt("reminderMinute", value).apply() }
 
+  /** Mood color scheme picked in the app; see Moods.face. */
+  var palette: String
+    get() = prefs.getString("palette", null) ?: "kindred"
+    set(value) { prefs.edit().putString("palette", value).apply() }
+
   /** Today's mood if known (from the app or a quick log), otherwise null. */
   fun todayMood(): Int? {
     if (prefs.getString("loggedDate", null) != Moods.dayKey()) return null

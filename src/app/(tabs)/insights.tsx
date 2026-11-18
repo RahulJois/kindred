@@ -110,7 +110,8 @@ export default function InsightsScreen() {
                 {usedTags.map((tag) => (
                   <Chip
                     key={tag.id}
-                    label={`${tag.emoji} ${tag.name}`}
+                    emoji={tag.emoji}
+                    label={tag.name}
                     selected={highlightTag === tag.id}
                     onPress={() => setHighlightTag(highlightTag === tag.id ? null : tag.id)}
                   />
